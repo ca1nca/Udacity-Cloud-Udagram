@@ -4,7 +4,7 @@ The purpose of the first part of this project was to demonstrate knowledge of si
 
 ## URL where app is hosted
 
-udacity-cloud-udagram-dev2.us-west-2.elasticbeanstalk.com/filteredimage
+udacity-cloud-udagram-dev2.us-west-2.elasticbeanstalk.com/filteredimage?image_url=[insert image url here]
 
 ## Running the application
 
