@@ -2,6 +2,9 @@ import express from 'express';
 import bodyParser from 'body-parser';
 import {filterImageFromURL, deleteLocalFiles} from './util/util';
 
+// Dev-imported packages
+import { isURL } from 'validator';
+
 (async () => {
 
   // Init the Express application
@@ -13,19 +16,44 @@ import {filterImageFromURL, deleteLocalFiles} from './util/util';
   // Use the body parser middleware for post requests
   app.use(bodyParser.json());
 
-  // @TODO1 IMPLEMENT A RESTFUL ENDPOINT
-  // GET /filteredimage?image_url={{URL}}
-  // endpoint to filter an image from a public url.
-  // IT SHOULD
-  //    1
-  //    1. validate the image_url query
-  //    2. call filterImageFromURL(image_url) to filter the image
-  //    3. send the resulting file in the response
-  //    4. deletes any files on the server on finish of the response
-  // QUERY PARAMATERS
-  //    image_url: URL of a publicly accessible image
-  // RETURNS
-  //   the filtered image file [!!TIP res.sendFile(filteredpath); might be useful]
+  // IMPLEMENT A USEFUL ENDPOINT
+  app.get("/filteredimage", async (req, res) => {
+    // fail if no parameter provided
+    if (!req.query.image_url) {
+      res.status(400).send("Must include image_url as a query parameters");
+      return;
+    }
+
+    // fail if url is invalid
+    if (!isURL(req.query.image_url)) {
+      res.status(422).send("image_url is invalid");
+      return;
+    }
+
+    // filter image at the URL given in the query
+    let image: string;
+    try {
+      image = await filterImageFromURL(req.query.image_url);
+    } catch(err) {
+      res.status(500).send(`An error occurred in filterImageFromURL: ${err}`);
+      return;
+    }
+
+    // send file and error out if problem
+    res.status(200).sendFile(image, async (err) => {
+      if (err) {
+        res.status(500).send(`An error occurred sending File: ${err}`);
+        return;
+      }
+
+      // cleanup
+      try {
+        await deleteLocalFiles([image]);
+      } catch(err) {
+        throw `An error occurred in deleteLocalFiles: ${err}`;
+      }
+    });
+  });
 
   /**************************************************************************** */
 
@@ -34,7 +62,7 @@ import {filterImageFromURL, deleteLocalFiles} from './util/util';
   // Root Endpoint
   // Displays a simple message to the user
   app.get( "/", async ( req, res ) => {
-    res.send("try GET /filteredimage?image_url={{}}")
+    res.send("try GET /filteredimage?image_url={{}}");
   } );
   
 
